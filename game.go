@@ -1,6 +1,13 @@
 package main
 
-import "github.com/gen2brain/raylib-go/raylib"
+import (
+	"github.com/gen2brain/raylib-go/raylib"
+	"io/ioutil"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+)
 
 const (
 	screenWidth  = 1000
@@ -22,6 +29,8 @@ var (
 	playerFrame                                   int
 
 	frameCount int
+	mapW, mapH int
+	tileMap    []int
 
 	musicPaused bool
 	music       rl.Music
@@ -64,7 +73,7 @@ func input() {
 func update() {
 	running = !rl.WindowShouldClose()
 
-	playerSrc.X = 0
+	playerSrc.X = playerSrc.Width * float32(playerFrame)
 	if playerMoving {
 		if playerUp {
 			playerDest.Y -= playerSpeed
@@ -84,15 +93,19 @@ func update() {
 			playerFrame++
 			frameCount = 1
 		}
-
-		playerSrc.X = playerSrc.Width * float32(playerFrame)
+	} else if frameCount%45 == 1 {
+		playerFrame++
 	}
 
 	frameCount++
 	if playerFrame > 3 {
 		playerFrame = 0
 	}
+	if !playerMoving && playerFrame > 1 {
+		playerFrame = 0
+	}
 
+	playerSrc.X = playerSrc.Width * float32(playerFrame)
 	playerSrc.Y = playerSrc.Height * float32(playerDirection)
 
 	rl.UpdateMusicStream(music)
@@ -120,6 +133,35 @@ func render() {
 	rl.EndDrawing()
 }
 
+func loadMap(mapFile string) {
+	file, err := ioutil.ReadFile(mapFile)
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+
+	removedNewLines := strings.Replace(string(file), "\n", "", -1)
+	sliced := strings.Split(removedNewLines, " ")
+
+	mapW = -1
+	mapH = -1
+	for i := 0; i < len(sliced); i++ {
+		s, _ := strconv.ParseInt(sliced[i], 10, 64)
+		m := int(s)
+		if mapW == -1 {
+			mapW = m
+		} else if mapH == -1 {
+			mapH = m
+		} else {
+			tileMap = append(tileMap, m)
+		}
+	}
+
+	if len(tileMap) > mapW*mapH {
+		tileMap = tileMap[:mapW*mapH]
+	}
+}
+
 func initialize() {
 	rl.InitWindow(screenWidth, screenHeight, "Game")
 	rl.SetExitKey(0)
@@ -142,6 +184,8 @@ func initialize() {
 		0,
 		1.5,
 	)
+
+	loadMap("one.map")
 }
 
 func quit() {
