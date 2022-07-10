@@ -15,14 +15,22 @@ const (
 )
 
 var (
-	running      = true
-	bgColor      = rl.NewColor(147, 211, 196, 255)
+	running = true
+	bgColor = rl.NewColor(147, 211, 196, 255)
+
 	grassSprite  rl.Texture2D
+	hillSprite   rl.Texture2D
+	fenceSprite  rl.Texture2D
+	houseSprite  rl.Texture2D
+	tilledSprite rl.Texture2D
+	waterSprite  rl.Texture2D
+	tex          rl.Texture2D
+
 	playerSprite rl.Texture2D
 	playerSrc    rl.Rectangle
 	playerDest   rl.Rectangle
 
-	playerSpeed                                   float32 = 4
+	playerSpeed                                   float32 = 1.4
 	playerMoving                                  bool
 	playerDirection                               int
 	playerUp, playerDown, playerRight, playerLeft bool
@@ -49,13 +57,50 @@ func drawScene() {
 			tileDest.X = tileDest.Width * float32(i%mapW)
 			tileDest.Y = tileDest.Height * float32(i/mapW)
 
-			// find tileSrc from tile set to render
-			countNumberOfTileSet := int(grassSprite.Width / int32(tileSrc.Width))
+			if srcMap[i] == "g" {
+				// find tileSrc from tile set to render
+				tex = grassSprite
+			}
+			if srcMap[i] == "l" {
+				// find tileSrc from tile set to render
+				tex = hillSprite
+			}
+			if srcMap[i] == "f" {
+				// find tileSrc from tile set to render
+				tex = fenceSprite
+			}
+			if srcMap[i] == "h" {
+				// find tileSrc from tile set to render
+				tex = houseSprite
+			}
+			if srcMap[i] == "w" {
+				// find tileSrc from tile set to render
+				tex = waterSprite
+			}
+			if srcMap[i] == "t" {
+				// find tileSrc from tile set to render
+				tex = tilledSprite
+			}
+
+			if srcMap[i] == "h" || srcMap[i] == "f" {
+				tileSrc.X = 0
+				tileSrc.Y = 0
+				rl.DrawTexturePro(
+					grassSprite,
+					tileSrc,
+					tileDest,
+					rl.NewVector2(tileDest.Width, tileDest.Height),
+					0,
+					rl.White,
+				)
+			}
+
+			countNumberOfTileSet := int(tex.Width / int32(tileSrc.Width))
 			tileSrc.X = tileSrc.Width * float32((tileMap[i]-1)%countNumberOfTileSet)
 			tileSrc.Y = tileSrc.Height * float32((tileMap[i]-1)/countNumberOfTileSet)
 
 			rl.DrawTexturePro(
-				grassSprite,
+				tex,
 				tileSrc,
 				tileDest,
 				rl.NewVector2(tileDest.Width, tileDest.Height),
@@ -172,7 +217,7 @@ func loadMap(mapFile string) {
 		os.Exit(1)
 	}
 
-	removedNewLines := strings.Replace(string(file), "\n", "", -1)
+	removedNewLines := strings.Replace(string(file), "\n", " ", -1)
 	sliced := strings.Split(removedNewLines, " ")
 
 	mapW = -1
@@ -184,14 +229,16 @@ func loadMap(mapFile string) {
 			mapW = m
 		} else if mapH == -1 {
 			mapH = m
-		} else {
+		} else if i < mapW*mapH+2 {
 			tileMap = append(tileMap, m)
+		} else {
+			srcMap = append(srcMap, sliced[i])
 		}
 	}
 
-	if len(tileMap) > mapW*mapH {
-		tileMap = tileMap[:mapW*mapH]
-	}
+	//if len(tileMap) > mapW*mapH {
+	//	tileMap = tileMap[:mapW*mapH]
+	//}
 }
 
 func initialize() {
@@ -200,13 +247,18 @@ func initialize() {
 	rl.SetTargetFPS(60)
 
 	grassSprite = rl.LoadTexture("res/Tilesets/Grass.png")
+	hillSprite = rl.LoadTexture("res/Tilesets/Hills.png")
+	houseSprite = rl.LoadTexture("res/Tilesets/Wooden House.png")
+	fenceSprite = rl.LoadTexture("res/Tilesets/Fences.png")
+	tilledSprite = rl.LoadTexture("res/Tilesets/Tilled Dirt.png")
+	waterSprite = rl.LoadTexture("res/Tilesets/Water.png")
 	playerSprite = rl.LoadTexture("res/Characters/BasicCharakterSpriteSheet.png")
 
 	tileSrc = rl.NewRectangle(0, 0, 16, 16)
 	tileDest = rl.NewRectangle(0, 0, 16, 16)
 
 	playerSrc = rl.NewRectangle(0, 0, 48, 48)
-	playerDest = rl.NewRectangle(100, 100, 100, 100)
+	playerDest = rl.NewRectangle(200, 200, 60, 60)
 
 	rl.InitAudioDevice()
 	music = rl.LoadMusicStream("res/music.mp3")
@@ -220,7 +272,9 @@ func initialize() {
 		1.5,
 	)
 
-	loadMap("one.map")
+	cam.Zoom = 3
+
+	loadMap("ep/two.map")
 }
 
 func quit() {
