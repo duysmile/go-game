@@ -29,8 +29,12 @@ var (
 	playerFrame                                   int
 
 	frameCount int
-	mapW, mapH int
+
+	tileDest   rl.Rectangle
+	tileSrc    rl.Rectangle
 	tileMap    []int
+	srcMap     []string
+	mapW, mapH int
 
 	musicPaused bool
 	music       rl.Music
@@ -39,8 +43,36 @@ var (
 )
 
 func drawScene() {
-	rl.DrawTexture(grassSprite, 100, 50, rl.White)
-	rl.DrawTexturePro(playerSprite, playerSrc, playerDest, rl.NewVector2(playerDest.Width, playerDest.Height), 0, rl.White)
+	for i := 0; i < len(tileMap); i++ {
+		if tileMap[i] != 0 {
+			// find tileDest coordinate according tileMap
+			tileDest.X = tileDest.Width * float32(i%mapW)
+			tileDest.Y = tileDest.Height * float32(i/mapW)
+
+			// find tileSrc from tile set to render
+			countNumberOfTileSet := int(grassSprite.Width / int32(tileSrc.Width))
+			tileSrc.X = tileSrc.Width * float32((tileMap[i]-1)%countNumberOfTileSet)
+			tileSrc.Y = tileSrc.Height * float32((tileMap[i]-1)/countNumberOfTileSet)
+
+			rl.DrawTexturePro(
+				grassSprite,
+				tileSrc,
+				tileDest,
+				rl.NewVector2(tileDest.Width, tileDest.Height),
+				0,
+				rl.White,
+			)
+		}
+	}
+
+	rl.DrawTexturePro(
+		playerSprite,
+		playerSrc,
+		playerDest,
+		rl.NewVector2(playerDest.Width, playerDest.Height),
+		0,
+		rl.White,
+	)
 }
 
 func input() {
@@ -169,6 +201,9 @@ func initialize() {
 
 	grassSprite = rl.LoadTexture("res/Tilesets/Grass.png")
 	playerSprite = rl.LoadTexture("res/Characters/BasicCharakterSpriteSheet.png")
+
+	tileSrc = rl.NewRectangle(0, 0, 16, 16)
+	tileDest = rl.NewRectangle(0, 0, 16, 16)
 
 	playerSrc = rl.NewRectangle(0, 0, 48, 48)
 	playerDest = rl.NewRectangle(100, 100, 100, 100)
